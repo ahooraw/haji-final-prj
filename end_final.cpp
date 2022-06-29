@@ -57,14 +57,17 @@ public:
         name = n;
         price = p;
     }
+
     string get_name()
     {
         return name;
     }
+
     float get_price()
     {
         return price;
     }
+
     void print_product()
     {
         cout << "- Product: " << endl;
@@ -73,21 +76,75 @@ public:
     }
 };
 
+class Factor
+{
+    float price;
+    Product boughts[100]; // max is 100 product
+    int boughts_count;
+    // todo: date here
+    bool is_pay;
+
+public:
+    Factor(float p)
+    {
+        price = p;
+        boughts_count = 0;
+        is_pay = false;
+    }
+    float get_price()
+    {
+        return price;
+    }
+
+    Product *get_boughts()
+    {
+        return boughts;
+    }
+
+    int get_boughts_count()
+    {
+        return boughts_count;
+    }
+
+    // todo: get date function
+
+    bool get_is_pay()
+    {
+        return is_pay;
+    }
+
+    void print_Factor()
+    {
+        cout << "- Factor: " << endl;
+        // todo: printing date
+        cout << "     price: " << price << endl;
+        cout << "     boughts product: " << endl;
+        for (size_t i = 0; i < boughts_count; i++)
+        {
+            cout << "id: " << i << endl;
+            boughts[i].print_product();
+        }
+    }
+};
+
 // prototypes
 void seperator();
-void print_menu();
+void show_menu();
 void exit_fun();
 void show_all_products();
 User is_valid(string, string);
 void person_login();
 void show_all_users();
-void person_signup();
-void add_new_user(User);
+void new_user();
+void add_to_users(User);
 bool is_available_user(string, string);
 void increasing_wallet();
 bool is_admin(User);
 void after_login_loop_user();
 void after_login_loop_admin();
+void add_to_products(Product);
+void remove_product();
+void new_product();
 
 // global variables
 const int max_products_count = 100000;
@@ -112,7 +169,7 @@ int main(int argc, char const *argv[])
     while (1)
     {
         seperator();
-        print_menu();
+        show_menu();
         int x;
         cin >> x;
         if (x == 1)
@@ -133,7 +190,7 @@ int main(int argc, char const *argv[])
         }
         else if (x == 3)
         {
-            person_signup();
+            new_user();
         }
         else if (x == 4)
         {
@@ -152,13 +209,13 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-void add_new_user(User user)
+void add_to_users(User user)
 {
     users[user_count] = user;
     user_count++;
 }
 
-void add_new_product(Product product)
+void add_to_products(Product product)
 {
     products[product_count] = product;
     product_count++;
@@ -169,12 +226,12 @@ void seperator()
     cout << "++++++++++++++++++++++++++++++++++++++++++++" << endl;
 }
 
-void print_menu()
+void show_menu()
 {
     cout << "Best Online Shop" << endl;
     cout << "1. show all products" << endl;
-    cout << "2. login" << endl;
-    cout << "3. singup" << endl;
+    cout << "2. login (entering availble user)" << endl;
+    cout << "3. singup (new user)" << endl;
     cout << "4. exit" << endl;
     cout << "5. show all users" << endl;
     cout << endl;
@@ -193,6 +250,7 @@ void show_all_products()
     cout << "All Products: " << endl;
     for (size_t i = 0; i < product_count; i++)
     {
+        cout << "id: " << i << endl;
         products[i].print_product();
     }
 }
@@ -277,7 +335,7 @@ void show_all_users()
     }
 }
 
-void person_signup()
+void new_user()
 {
     cout << endl
          << endl;
@@ -300,7 +358,7 @@ void person_signup()
     else
     {
         User new_user(username, password);
-        add_new_user(new_user);
+        add_to_users(new_user);
     }
 }
 
@@ -309,11 +367,11 @@ bool is_admin(User user)
     return user.get_username() == admin_username;
 }
 
-Product create_product()
+void new_product()
 {
     cout << endl
          << endl;
-    cout << "Create Product: " << endl;
+    cout << "New Product: " << endl;
 
     cout << "name: ";
     string name;
@@ -323,16 +381,40 @@ Product create_product()
     cout << "price: ";
     float price;
     cin >> price;
+
+    Product product(name, price);
+    add_to_products(product);
+}
+
+void remove_product()
+{
+    cout << endl
+         << endl;
+    cout << "Remove Product: " << endl;
+
+    cout << "id: ";
+    int id;
+    cin >> id;
+
+    for (size_t i = id; i < product_count - 1; i++)
+    {
+        products[i] = products[i + 1];
+    }
+
+    // we don't remove the product data and just wait to adding in this index in 'products' array
+    product_count -= 1;
+    cout << "product remove successfully!";
 }
 
 void after_login_menu_admin()
 {
     seperator();
     current_user.print_user();
-    cout << "1. add product" << endl;
+    cout << "1. new product" << endl;
     cout << "2. remove product" << endl;
     cout << "3. add discount" << endl;
-    cout << "4. log out" << endl;
+    cout << "4. show all products" << endl;
+    cout << "5. log out" << endl;
     cout << "choose by number: ";
 }
 
@@ -346,14 +428,20 @@ void after_login_loop_admin()
 
         if (x == 1)
         {
+            new_product();
         }
         else if (x == 2)
         {
+            remove_product();
         }
         else if (x == 3)
         {
         }
         else if (x == 4)
+        {
+            show_all_products();
+        }
+        else if (x == 5)
         {
             break;
         }

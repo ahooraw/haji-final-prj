@@ -31,6 +31,8 @@
   "files.associations": {
     "iostream": "cpp",
     "ostream": "cpp",
-    "bitset": "cpp"
+    "bitset": "cpp",
+    "*.tcc": "cpp",
+    "iosfwd": "cpp"
   }
 }

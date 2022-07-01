@@ -75,6 +75,11 @@ public:
         wallet = w;
     }
 
+    void set_basket_count(int n)
+    {
+        basket_count = n;
+    }
+
     void add_to_basket(string product_name)
     {
         basket[basket_count] = product_name;
@@ -141,14 +146,14 @@ public:
 
 class Factor
 {
-    float price;
-    string boughts[100]; // max is 100 product
-    int boughts_count;
-    // todo: date here
-    bool is_pay;
 
 public:
-    Factor(float p)
+    float price;
+    int boughts_count;
+    string boughts[100]; // max is 100 product
+    // todo: date here
+    bool is_pay;
+    Factor(float p = 0)
     {
         price = p;
         boughts_count = 0;
@@ -241,9 +246,10 @@ void increasing_wallet();
 bool is_admin(User);
 void after_login_loop_user();
 void after_login_loop_admin();
+void add_to_factors(Factor);
 void add_to_users(User);
 void add_to_products(Product);
-void add_to_discounts(string, float, int, int);
+void add_to_discounts(string, float, int, int, bool);
 bool new_user();
 void new_product();
 void new_to_basket();
@@ -254,11 +260,20 @@ Product get_product_by_name(string);
 bool is_exist_product_by_name(string);
 bool confirm_buying();
 void show_all_discounts();
+void show_all_factors();
+void read_products_in_file();
+void read_users_in_file();
+void read_discounts_in_file();
+void read_factors_in_file();
+void write_products_in_file();
+void write_users_in_file();
+void write_discounts_in_file();
+void write_factors_in_file();
 
 // global variables
 const int max_products_count = 100000;
 Product products[max_products_count];
-int product_count = 0;
+int products_count = 0;
 
 string admin_username = "Admin";
 string admin_password = "Admin@123456";
@@ -272,11 +287,19 @@ const int max_discounts_count = 100;
 Discount discounts[max_discounts_count];
 int discount_count = 0;
 
+const int max_factor_count = 100;
+Factor factors[max_factor_count];
+int factors_count = 0;
+
 int current_user_index = -1;
 User admin(admin_username, admin_password);
 
 int main(int argc, char const *argv[])
 {
+    read_products_in_file();
+    read_users_in_file();
+    read_discounts_in_file();
+    read_factors_in_file();
 
     // Program loop
     while (1)
@@ -310,7 +333,7 @@ int main(int argc, char const *argv[])
             if (is_new_user)
             {
                 after_login_loop_user();
-                users[current_user_index].print_user();
+                write_users_in_file();
             }
         }
         else if (x == 4)
@@ -320,6 +343,10 @@ int main(int argc, char const *argv[])
         else if (x == 5)
         {
             show_all_users();
+        }
+        else if (x == 6)
+        {
+            show_all_factors();
         }
         else
         {
@@ -339,8 +366,8 @@ void add_to_users(User user)
 
 void add_to_products(Product product)
 {
-    products[product_count] = product;
-    product_count++;
+    products[products_count] = product;
+    products_count++;
 }
 
 void seperator()
@@ -356,6 +383,7 @@ void show_menu()
     cout << "3. singup (new user)" << endl;
     cout << "4. exit" << endl;
     cout << "5. show all users" << endl;
+    cout << "6. show all factors" << endl;
     cout << endl;
     cout << "choose by number: ";
 }
@@ -366,11 +394,21 @@ void exit_fun()
     exit(0);
 }
 
+void show_all_factors()
+{
+    cout << "All factors: " << endl;
+    for (size_t i = 0; i < factors_count; i++)
+    {
+        cout << "id: " << i << endl;
+        factors[i].print_Factor();
+    }
+}
+
 void show_all_products()
 {
     seperator();
     cout << "All Products: " << endl;
-    for (size_t i = 0; i < product_count; i++)
+    for (size_t i = 0; i < products_count; i++)
     {
         cout << "id: " << i << endl;
         products[i].print_product();
@@ -452,7 +490,6 @@ bool person_login()
 
 void show_all_users()
 {
-    users[current_user_index].print_user();
     seperator();
     cout << "all users: " << endl;
     for (size_t i = 0; i < user_count; i++)
@@ -463,7 +500,7 @@ void show_all_users()
 
 Product get_product_by_name(string product_name)
 {
-    for (size_t i = 0; i < product_count; i++)
+    for (size_t i = 0; i < products_count; i++)
     {
         if (product_name == products[i].get_name())
         {
@@ -509,7 +546,7 @@ bool is_admin(User user)
 
 bool is_exist_product_by_name(string name)
 {
-    for (size_t i = 0; i < product_count; i++)
+    for (size_t i = 0; i < products_count; i++)
     {
         if (name == products[i].get_name())
         {
@@ -559,6 +596,8 @@ void after_login_loop_admin()
         }
         else if (x == 5)
         {
+            write_products_in_file();
+            write_discounts_in_file();
             current_user_index = -1;
             break;
         }
@@ -602,13 +641,13 @@ void remove_product()
     int id;
     cin >> id;
 
-    for (size_t i = id; i < product_count - 1; i++)
+    for (size_t i = id; i < products_count - 1; i++)
     {
         products[i] = products[i + 1];
     }
 
     // we don't remove the product data and just wait to adding in this index in 'products' array
-    product_count -= 1;
+    products_count -= 1;
     cout << "product remove successfully!";
 }
 
@@ -634,16 +673,17 @@ void new_discount()
     cin >> year >> month >> day;
     int end_date = year * 365 + month * 30 + day;
 
-    add_to_discounts(code, percent, start_date, end_date);
+    add_to_discounts(code, percent, start_date, end_date, 0);
     cout << "discount added!" << endl;
 }
 
-void add_to_discounts(string c, float p, int sd, int ed)
+void add_to_discounts(string c, float p, int sd, int ed, bool iu)
 {
     discounts[discount_count].secret_code = c;
     discounts[discount_count].percent = p;
     discounts[discount_count].start_date = sd;
     discounts[discount_count].end_date = ed;
+    discounts[discount_count].is_used = iu;
     discount_count++;
 }
 
@@ -689,7 +729,9 @@ void after_login_loop_user()
         }
         else if (x == 4)
         {
-            // current_user = blank_user;
+            write_users_in_file();
+            write_factors_in_file();
+            current_user_index = -1;
             break;
         }
         else
@@ -697,7 +739,6 @@ void after_login_loop_user()
             cout << "WTF" << endl;
         }
     }
-    users[current_user_index].print_user();
 }
 
 void increasing_wallet()
@@ -769,6 +810,7 @@ void buy_your_basket()
                 {
                     price_sum *= (1 - discounts[discount_index].percent);
                     discounts[discount_index].is_used = true;
+                    write_discounts_in_file();
                 }
             }
         }
@@ -786,6 +828,8 @@ void buy_your_basket()
                 factor.add_bought(users[current_user_index].get_basket_product(i));
             }
 
+            add_to_factors(factor);
+
             // remove all basket products
             for (size_t i = 0; i < users[current_user_index].get_basket_count(); i++)
             {
@@ -796,6 +840,12 @@ void buy_your_basket()
             cout << "You buy your basket successfully!" << endl;
         }
     }
+}
+
+void add_to_factors(Factor factor)
+{
+    factors[factors_count] = factor;
+    factors_count++;
 }
 
 bool confirm_buying()
@@ -829,5 +879,145 @@ void new_to_basket()
     {
         cout << "not found this product name bro!" << endl
              << endl;
+    }
+}
+
+// file
+void write_products_in_file()
+{
+    ofstream products_file("products.txt");
+    for (size_t i = 0; i < products_count; i++)
+    {
+        products_file << products[i].get_name() << ' ';
+        products_file << products[i].get_price() << ' ';
+    }
+}
+
+void write_users_in_file()
+{
+    ofstream users_file("users.txt");
+    for (size_t i = 0; i < user_count; i++)
+    {
+        users_file << users[i].get_username() << ' ';
+        users_file << users[i].get_password() << ' ';
+        users_file << users[i].get_wallet() << ' ';
+        users_file << users[i].get_basket_count() << ' ';
+        for (size_t j = 0; j < users[i].get_basket_count(); j++)
+        {
+            users_file << users[i].get_basket_product(j) << ' ';
+        }
+    }
+}
+
+void write_discounts_in_file()
+{
+    ofstream discounts_file("discounts.txt");
+    for (size_t i = 0; i < discount_count; i++)
+    {
+        discounts_file << discounts[i].secret_code << ' ';
+        discounts_file << discounts[i].percent << ' ';
+        discounts_file << discounts[i].start_date << ' ';
+        discounts_file << discounts[i].end_date << ' ';
+        discounts_file << discounts[i].is_used << ' ';
+    }
+}
+
+void write_factors_in_file()
+{
+    ofstream factors_file("factors.txt");
+    for (size_t i = 0; i < factors_count; i++)
+    {
+        factors_file << factors[i].price << ' ';
+        factors_file << factors[i].boughts_count << ' ';
+        for (size_t j = 0; j < factors[i].boughts_count; j++)
+        {
+            factors_file << factors[i].boughts[j] << ' ';
+        }
+        factors_file << factors[i].is_pay << ' ';
+    }
+}
+
+void read_products_in_file()
+{
+    ifstream products_file("products.txt");
+    string name;
+    float price;
+    while (products_file >> name)
+    {
+        products_file >> price;
+        Product product(name, price);
+        add_to_products(product);
+    }
+}
+
+void read_users_in_file()
+{
+    ifstream users_file("users.txt");
+    string username;
+    string password;
+    float wallet;
+    string basket[100];
+    int basket_count;
+    while (users_file >> username)
+    {
+        users_file >> password;
+        users_file >> wallet;
+        users_file >> basket_count;
+        for (size_t i = 0; i < basket_count; i++)
+        {
+            users_file >> basket[i];
+        }
+        users[user_count].set_username(username);
+        users[user_count].set_password(password);
+        users[user_count].set_wallet(wallet);
+        users[user_count].set_basket_count(basket_count);
+        for (size_t i = 0; i < users[user_count].get_basket_count(); i++)
+        {
+            users[user_count].add_to_basket(basket[i]);
+        }
+        user_count++;
+    }
+}
+
+void read_discounts_in_file()
+{
+    ifstream discounts_file("discounts.txt");
+    string secret_code;
+    float percent;
+    int start_date;
+    int end_date;
+    bool is_used;
+    while (discounts_file >> secret_code)
+    {
+        discounts_file >> percent;
+        discounts_file >> start_date;
+        discounts_file >> end_date;
+        discounts_file >> is_used;
+        add_to_discounts(secret_code, percent, start_date, end_date, is_used);
+    }
+}
+
+void read_factors_in_file()
+{
+    ifstream factors_file("factors.txt");
+    float price;
+    int boughts_count;
+    string boughts[100];
+    bool is_pay;
+    while (factors_file >> price)
+    {
+        factors_file >> boughts_count;
+        for (size_t i = 0; i < boughts_count; i++)
+        {
+            factors_file >> boughts[i];
+        }
+        factors_file >> is_pay;
+
+        factors[factors_count].price = price;
+        for (size_t i = 0; i < boughts_count; i++)
+        {
+            factors[factors_count].add_bought(boughts[i]);
+        }
+        factors[factors_count].is_pay = is_pay;
     }
 }

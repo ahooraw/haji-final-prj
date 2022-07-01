@@ -298,4 +298,14 @@ public:
 
 int main()
 {
+    int a = 2;
+    int b = a;
+    a = 3;
+    string s = "ali";
+    string b = s;
+    s[0] = 'b';
+    cout << s << endl;
+    cout << b << endl;
+    
+
 }

@@ -10,6 +10,7 @@ using namespace std;
 class Product;
 class User;
 class Factor;
+class Discount;
 
 // classes
 class User
@@ -21,11 +22,11 @@ class User
     int basket_count;
 
 public:
-    User(string u = "null", string p = "null")
+    User(string u = "null", string p = "null", float w = 0)
     {
         username = u;
         password = p;
-        wallet = 0;
+        wallet = w;
         basket_count = 0;
     }
 
@@ -57,6 +58,21 @@ public:
     int get_basket_count()
     {
         return basket_count;
+    }
+
+    void set_username(string u)
+    {
+        username = u;
+    }
+
+    void set_password(string p)
+    {
+        password = p;
+    }
+
+    void set_wallet(float w)
+    {
+        wallet = w;
     }
 
     void add_to_basket(string product_name)
@@ -182,29 +198,62 @@ public:
     }
 };
 
+class Discount
+{
+
+public:
+    string secret_code;
+    float percent;  // between 0 and 1 ex. 0.2
+    int start_date; // date is all days from chises
+    int end_date;
+    bool is_used;
+
+    Discount(string s = "null", float p = 0, int sd = 0, int ed = 0)
+    {
+        secret_code = s;
+        percent = p;
+        start_date = sd;
+        end_date = ed;
+        is_used = false;
+    }
+
+    void print_disoucnt()
+    {
+        cout << "- Discount : " << endl;
+        cout << "      code: " << secret_code << endl;
+        cout << "      percent: " << percent << endl;
+        cout << "      start_date: " << start_date << endl;
+        cout << "      end_date: " << end_date << endl;
+        cout << "      is_used: " << is_used << endl;
+    }
+};
+
 // prototypes
 void seperator();
 void show_menu();
 void exit_fun();
 void show_all_products();
-User is_valid(string, string);
+int is_valid(string, string);
 bool person_login();
 void show_all_users();
-bool new_user();
-void add_to_users(User);
 bool is_available_user(string, string);
 void increasing_wallet();
 bool is_admin(User);
 void after_login_loop_user();
 void after_login_loop_admin();
+void add_to_users(User);
 void add_to_products(Product);
+void add_to_discounts(string, float, int, int);
+bool new_user();
 void new_product();
+void new_to_basket();
+void new_discount();
 void remove_product();
 void buy_your_basket();
 Product get_product_by_name(string);
-void new_to_basket();
 bool is_exist_product_by_name(string);
 bool confirm_buying();
+void show_all_discounts();
 
 // global variables
 const int max_products_count = 100000;
@@ -219,7 +268,11 @@ const int max_users_count = 1000;
 User users[max_users_count];
 int user_count = 0;
 
-User current_user("null", "null");
+const int max_discounts_count = 100;
+Discount discounts[max_discounts_count];
+int discount_count = 0;
+
+int current_user_index = -1;
 User admin(admin_username, admin_password);
 
 int main(int argc, char const *argv[])
@@ -241,7 +294,7 @@ int main(int argc, char const *argv[])
             bool is_login = person_login(); // current user set here
             if (is_login)
             {
-                if (is_admin(current_user))
+                if (current_user_index == -2)
                 {
                     after_login_loop_admin();
                 }
@@ -257,6 +310,7 @@ int main(int argc, char const *argv[])
             if (is_new_user)
             {
                 after_login_loop_user();
+                users[current_user_index].print_user();
             }
         }
         else if (x == 4)
@@ -267,7 +321,6 @@ int main(int argc, char const *argv[])
         {
             show_all_users();
         }
-
         else
         {
             cout << "WTF" << endl;
@@ -278,7 +331,9 @@ int main(int argc, char const *argv[])
 
 void add_to_users(User user)
 {
-    users[user_count] = user;
+    users[user_count].set_username(user.get_username());
+    users[user_count].set_password(user.get_password());
+    users[user_count].set_wallet(0);
     user_count++;
 }
 
@@ -322,13 +377,13 @@ void show_all_products()
     }
 }
 
-User is_valid(string username, string password)
+int is_valid(string username, string password)
 {
     User not_found_user(" ", " ");
     // check is admin?
     if (username == admin_username and password == admin_password)
     {
-        return admin;
+        return -2;
     }
     else // this is not admin
     {
@@ -336,12 +391,13 @@ User is_valid(string username, string password)
         {
             if (username == users[i].get_username() and password == users[i].get_password())
             {
-                return users[i];
+
+                return i;
             }
         }
     }
 
-    return not_found_user;
+    return -1;
 }
 
 bool is_available_user(string username, string password)
@@ -380,10 +436,10 @@ bool person_login()
     string password;
     getline(cin, password);
 
-    User user = is_valid(username, password);
-    if (user.get_username() != " ")
+    int user_index = is_valid(username, password);
+    if (user_index != -1)
     {
-        current_user = user;
+        current_user_index = user_index;
         cout << "You entered successfully!" << endl;
         return true;
     }
@@ -396,6 +452,7 @@ bool person_login()
 
 void show_all_users()
 {
+    users[current_user_index].print_user();
     seperator();
     cout << "all users: " << endl;
     for (size_t i = 0; i < user_count; i++)
@@ -438,9 +495,9 @@ bool new_user()
     }
     else
     {
+        current_user_index = user_count;
         User user(username, password);
         add_to_users(user);
-        current_user = user;
         return true;
     }
 }
@@ -466,12 +523,13 @@ bool is_exist_product_by_name(string name)
 void after_login_menu_admin()
 {
     seperator();
-    current_user.print_user();
+    cout << "You are admin bro" << endl;
     cout << "1. new product" << endl;
     cout << "2. remove product" << endl;
     cout << "3. add discount" << endl;
     cout << "4. show all products" << endl;
     cout << "5. log out" << endl;
+    cout << "6. show discounts" << endl;
     cout << "choose by number: ";
 }
 
@@ -493,6 +551,7 @@ void after_login_loop_admin()
         }
         else if (x == 3)
         {
+            new_discount();
         }
         else if (x == 4)
         {
@@ -500,7 +559,12 @@ void after_login_loop_admin()
         }
         else if (x == 5)
         {
+            current_user_index = -1;
             break;
+        }
+        else if (x == 6)
+        {
+            show_all_discounts();
         }
         else
         {
@@ -548,6 +612,49 @@ void remove_product()
     cout << "product remove successfully!";
 }
 
+void new_discount()
+{
+    cout << "New discount: " << endl;
+
+    cout << "code: ";
+    string code;
+    getline(cin, code);
+    getline(cin, code);
+
+    cout << "percent(between 0 and 1): ";
+    float percent;
+    cin >> percent;
+
+    cout << "start date(YYYY MM DD): ";
+    int year, month, day;
+    cin >> year >> month >> day;
+    int start_date = year * 365 + month * 30 + day;
+
+    cout << "end date(YYYY MM DD): ";
+    cin >> year >> month >> day;
+    int end_date = year * 365 + month * 30 + day;
+
+    add_to_discounts(code, percent, start_date, end_date);
+    cout << "discount added!" << endl;
+}
+
+void add_to_discounts(string c, float p, int sd, int ed)
+{
+    discounts[discount_count].secret_code = c;
+    discounts[discount_count].percent = p;
+    discounts[discount_count].start_date = sd;
+    discounts[discount_count].end_date = ed;
+    discount_count++;
+}
+
+void show_all_discounts()
+{
+    for (size_t i = 0; i < discount_count; i++)
+    {
+        discounts[i].print_disoucnt();
+    }
+}
+
 /////////////////// after login user functions ///////////////////////
 void after_login_menu_user()
 {
@@ -563,7 +670,7 @@ void after_login_loop_user()
     while (true)
     {
         seperator();
-        current_user.print_user();
+        users[current_user_index].print_user();
         after_login_menu_user();
         int x;
         cin >> x;
@@ -580,9 +687,9 @@ void after_login_loop_user()
         {
             buy_your_basket();
         }
-
         else if (x == 4)
         {
+            // current_user = blank_user;
             break;
         }
         else
@@ -590,6 +697,7 @@ void after_login_loop_user()
             cout << "WTF" << endl;
         }
     }
+    users[current_user_index].print_user();
 }
 
 void increasing_wallet()
@@ -598,13 +706,37 @@ void increasing_wallet()
     cout << "amount: ";
     float amount;
     cin >> amount;
-    current_user.increase_or_decrease_wallet(amount);
+    users[current_user_index].increase_or_decrease_wallet(amount);
     cout << "seccessfully increased!" << endl;
+}
+
+int zaman()
+{ // saal v mahe alan ro tabdil be rooz mikone barmigardoone
+    time_t now = time(0);
+    tm *ltm = localtime(&now);
+    int d = (((1900 + ltm->tm_year) * 365) + ((1 + ltm->tm_mon) + 30) + (ltm->tm_mday));
+    return d;
+}
+
+int is_valid_discount(string code)
+{
+    for (size_t i = 0; i < discount_count; i++)
+    {
+        if (discounts[i].secret_code == code)
+        {
+            if (discounts[i].start_date <= zaman() and discounts[i].end_date >= zaman())
+            {
+                return i;
+            }
+        }
+    }
+
+    return -1;
 }
 
 void buy_your_basket()
 {
-    if (current_user.get_basket_count() == 0)
+    if (users[current_user_index].get_basket_count() == 0)
     {
         cout << "your basket is blank bro!" << endl;
         return;
@@ -613,14 +745,35 @@ void buy_your_basket()
     // this piece of code is not very clean :)
     if (confirm_buying())
     {
+
         float price_sum = 0;
-        for (size_t i = 0; i < current_user.get_basket_count(); i++)
+        for (size_t i = 0; i < users[current_user_index].get_basket_count(); i++)
         {
-            Product product = get_product_by_name(current_user.get_basket_product(i));
+            Product product = get_product_by_name(users[current_user_index].get_basket_product(i));
             price_sum += product.get_price();
         }
 
-        if (price_sum > current_user.get_wallet())
+        if (discount_count != 0)
+        {
+            cout << "have discount code? (1/0): ";
+            string x;
+            getline(cin, x);
+            getline(cin, x);
+            if (x == "1")
+            {
+                cout << "enter code discount: ";
+                string code;
+                getline(cin, code);
+                int discount_index = is_valid_discount(code);
+                if (discount_index != -1)
+                {
+                    price_sum *= (1 - discounts[discount_index].percent);
+                    discounts[discount_index].is_used = true;
+                }
+            }
+        }
+
+        if (price_sum > users[current_user_index].get_wallet())
         {
             cout << "You can't buy your basket, You need to charge your wallet!" << endl
                  << endl;
@@ -628,18 +781,18 @@ void buy_your_basket()
         else
         {
             Factor factor(price_sum);
-            for (size_t i = 0; i < current_user.get_basket_count(); i++)
+            for (size_t i = 0; i < users[current_user_index].get_basket_count(); i++)
             {
-                factor.add_bought(current_user.get_basket_product(i));
+                factor.add_bought(users[current_user_index].get_basket_product(i));
             }
 
             // remove all basket products
-            for (size_t i = 0; i < current_user.get_basket_count(); i++)
+            for (size_t i = 0; i < users[current_user_index].get_basket_count(); i++)
             {
-                current_user.remove_from_basket(i);
+                users[current_user_index].remove_from_basket(i);
             }
 
-            current_user.increase_or_decrease_wallet(-price_sum);
+            users[current_user_index].increase_or_decrease_wallet(-price_sum);
             cout << "You buy your basket successfully!" << endl;
         }
     }
@@ -647,7 +800,7 @@ void buy_your_basket()
 
 bool confirm_buying()
 {
-    current_user.print_basket();
+    users[current_user_index].print_basket();
     cout << endl;
     cout << "are you sure? (1/0) ";
     int x;
@@ -668,7 +821,7 @@ void new_to_basket()
 
     if (is_exist)
     {
-        current_user.add_to_basket(product_name);
+        users[current_user_index].add_to_basket(product_name);
         cout << "successfully added!" << endl
              << endl;
     }

@@ -493,8 +493,10 @@ void show_all_users()
     }
 }
 
+// we suppose that all of this function call is sure that we find the product
 Product get_product_by_name(string product_name)
 {
+    Product redundant ("null", 0);
     for (size_t i = 0; i < products_count; i++)
     {
         if (product_name == products[i].get_name())
@@ -502,6 +504,7 @@ Product get_product_by_name(string product_name)
             return products[i];
         }
     }
+    return redundant;
 }
 
 bool new_user()

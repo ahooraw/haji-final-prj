@@ -2,11 +2,6 @@
 
 using namespace std;
 
-// todo:
-// bugs:
-//      - after log out and login again wallet go to zero :)
-//
-
 class Product;
 class User;
 class Factor;
@@ -1019,5 +1014,6 @@ void read_factors_in_file()
             factors[factors_count].add_bought(boughts[i]);
         }
         factors[factors_count].is_pay = is_pay;
+        factors_count++;
     }
 }

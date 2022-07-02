@@ -187,12 +187,12 @@ public:
     {
         cout << "- Factor: " << endl;
         // todo: printing date
-        cout << "     price: " << price << endl;
+        cout << "     all price: " << price << endl;
         cout << "     boughts product: " << endl;
         for (size_t i = 0; i < boughts_count; i++)
         {
-            cout << "id: " << i << endl;
-            cout << "name: " << boughts[i] << endl;
+            cout << "        id: " << i << endl;
+            cout << "        name: " << boughts[i] << endl;
             cout << endl;
         }
     }
@@ -762,7 +762,11 @@ int is_valid_discount(string code)
         {
             if (discounts[i].start_date <= zaman() and discounts[i].end_date >= zaman())
             {
-                return i;
+                if (discounts[i].is_used)
+                {
+
+                    return i;
+                }
             }
         }
     }
@@ -770,6 +774,7 @@ int is_valid_discount(string code)
     return -1;
 }
 
+// we have remove_from_basket() function in user class but have no remove interface for user :/
 void buy_your_basket()
 {
     if (users[current_user_index].get_basket_count() == 0)
@@ -789,12 +794,15 @@ void buy_your_basket()
             price_sum += product.get_price();
         }
 
-        if (discount_count != 0)
+        bool is_inputted_valid_code = false;
+        int counter = 0;
+        while (!is_inputted_valid_code)
         {
-            cout << "have discount code? (1/0): ";
+            cout << "It's not very expensive my friend but, \nhave discount code? (1/0): ";
             string x;
             getline(cin, x);
-            getline(cin, x);
+            if (counter < 1)
+                getline(cin, x); // wtf is this getline() function :)
             if (x == "1")
             {
                 cout << "enter code discount: ";
@@ -806,8 +814,19 @@ void buy_your_basket()
                     price_sum *= (1 - discounts[discount_index].percent);
                     discounts[discount_index].is_used = true;
                     write_discounts_in_file();
+                    is_inputted_valid_code = true;
+                }
+                else
+                {
+                    cout << "code is wrong my bro!" << endl;
                 }
             }
+            else
+            {
+                // here user haven't a discount code
+                break;
+            }
+            counter++;
         }
 
         if (price_sum > users[current_user_index].get_wallet())
